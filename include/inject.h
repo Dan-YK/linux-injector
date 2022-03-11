@@ -3,10 +3,13 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "ptrace.h"
 
 #define LIBC_PATH "/usr/lib/x86_64-linux-gnu/libc.so.6"
+#define LIBDL_PATH "/usr/lib/x86_64-linux-gnu/libdl.so.2"
+#define PAGESIZE sysconf(_SC_PAGESIZE)
 
 #define DEBUG 1
 
@@ -22,3 +25,6 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
 
 void print_registers(struct user_regs_struct *regs);
 #endif
+
+
+// NEED MPROTECT TO WRITE THE NAME INTO THE MMAP

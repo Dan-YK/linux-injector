@@ -9,23 +9,19 @@
 #include "inject.h"
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
+
     if (ptrace_attach(remote_pid) < 0) {
         return -1;
     }
 
-    uint64_t mmap_ret = CallMmap(local_pid, remote_pid, 0x400);
-
+    uint64_t handle = CallDlopen(local_pid, remote_pid, library_path);
+    if (handle < 0) {
+        return -1;
+    }
 
     if (ptrace_detach(remote_pid) < 0) {
         return -1;
     }
-
-
-    return 0;
-}
-
-uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path) {
-
 
     return 0;
 }
@@ -46,8 +42,34 @@ uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
     args[4] = 0x0;
     args[5] = 0x0;
 
+#ifdef DEBUG
+    printf("[+] arg0: %lx\n", args[0]);
+    printf("[+] arg1: %lx\n", args[1]);
+    printf("[+] arg2: %lx\n", args[2]);
+    printf("[+] arg3: %lx\n", args[3]);
+    printf("[+] arg4: %lx\n", args[4]);
+    printf("[+] arg5: %lx\n", args[5]);
+#endif
+
     uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
     return CallRemoteFunction(remote_pid, remote_mmap_addr, return_addr, args, argc);
+}
+
+
+uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path) {
+    uint64_t mmap_ret = CallMmap(local_pid, remote_pid, PAGESIZE);
+#ifdef DEBUG
+    printf("[+] Calling dlopen...\n");
+#endif
+    uint64_t remote_dlopen_addr = GetRemoteFunctionAddr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "dlopen"));
+
+    uint8_t argc = 2;
+    uint64_t args[argc];
+    args[0] = mmap_ret;
+    args[1] = RTLD_LAZY;
+
+    uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
+    return CallRemoteFunction(remote_pid, remote_dlopen_addr, return_addr, args, argc);
 }
 
 
@@ -63,7 +85,7 @@ uint64_t GetRemoteFunctionAddr(pid_t local_pid, pid_t remote_pid, const char *mo
     printf("[+] remote function address: 0x%lx\n", remote_base_addr + (local_function_addr - local_base_addr));
 #endif
 
-    return remote_base_addr + (local_function_addr - local_base_addr);
+    return remote_base_addr + (local_function_addr - local_base_addr) + 0x2;
 }
 
 
@@ -105,6 +127,12 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
         regs.r8 = args[4];
         regs.r9 = args[5];
     }
+    else if (argc == 2) {
+        regs.rdi = args[0];
+        regs.rsi = args[1];
+    }
+
+
     if (ptrace(PTRACE_POKEDATA, pid, regs.rsp, return_addr) < 0) {
         fprintf(stderr, "[-] Failed to force pid %d to interrupt\n", pid);
         return -1;
@@ -114,15 +142,25 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
 #endif
 
     ptrace_setregs(pid, &regs);
+
+    //printf("BEFORE\n");
+    //print_registers(&regs);
+
     ptrace_cont(pid);
     
     waitpid(pid, NULL, WUNTRACED);
 
     ptrace_getregs(pid, &regs);
+    ptrace_setregs(pid, &saved_regs);
+
+    //printf("AFTER\n");
+    //print_registers(&regs);
+    //print_registers(&saved_regs);
 #ifdef DEBUG
-    printf("[+] return value: 0x%llx\n", regs.rax);
+    printf("[+] return value: 0x%llx\n\n", regs.rax);
 #endif
-    return 0;
+
+    return regs.rax;
 }
 
 void print_registers(struct user_regs_struct *regs) {

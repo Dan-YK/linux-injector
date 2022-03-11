@@ -18,7 +18,7 @@ int main(int argc, const char **argv) {
 #ifdef DEBUG
     printf("[+] remote process id: %d\n", remote_pid);
     printf("[+] library path: %s\n", library_path);
-    printf("[+] local process id: %d\n", local_pid);
+    printf("[+] local process id: %d\n\n", local_pid);
 #endif
 
     if (inject(local_pid, remote_pid, library_path) < 0) {

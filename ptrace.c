@@ -12,7 +12,7 @@ int ptrace_attach(pid_t pid) {
     waitpid(pid, NULL, WUNTRACED);
 
 #ifdef DEBUG
-    printf("[+] Successfully attached to pid %d\n", pid);
+    printf("[+] Successfully attached to pid %d\n\n", pid);
 #endif
 
     return 0;
