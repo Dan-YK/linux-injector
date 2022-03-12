@@ -57,7 +57,11 @@ uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
 
 
 uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path) {
+
     uint64_t mmap_ret = CallMmap(local_pid, remote_pid, PAGESIZE);
+
+    ptrace_write(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path));
+
 #ifdef DEBUG
     printf("[+] Calling dlopen...\n");
 #endif
