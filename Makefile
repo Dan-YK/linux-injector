@@ -1,6 +1,6 @@
 CC=clang
 CFLAGS=-ldl
-INCLUDE=-Iinclude
+INCLUDE=-I$(PWD)/include
 
 all: clean main
 
