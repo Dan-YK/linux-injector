@@ -10,6 +10,6 @@ int PtraceCont(pid_t pid);
 int PtraceDetach(pid_t pid);
 int PtraceGetRegs(pid_t pid, struct user_regs_struct *regs);
 int PtraceSetRegs(pid_t pid, struct user_regs_struct *regs);
-int PtraceWrite(pid_tpid, uint64_t addr, uint64_t data, size_t size);
+int PtraceWrite(pid_t pid, uint64_t addr, uint64_t data, size_t size);
 
 #endif

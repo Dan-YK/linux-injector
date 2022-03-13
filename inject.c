@@ -10,7 +10,7 @@
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
-    if (!ptrace_attach(remote_pid)) {
+    if (!PtraceAttach(remote_pid)) {
         return 0;
     }
 
@@ -19,7 +19,7 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
         return 0;
     }
 
-    if (ptrace_detach(remote_pid) < 0) {
+    if (PtraceDetach(remote_pid) < 0) {
         return 0;
     }
 
@@ -60,7 +60,7 @@ uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path)
 
     uint64_t mmap_ret = CallMmap(local_pid, remote_pid, PAGESIZE);
 
-    ptrace_write(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path) + 1);
+    PtraceWrite(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path) + 1);
 
 #ifdef DEBUG
     printf("[+] Calling dlopen...\n");
@@ -116,7 +116,7 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
     struct user_regs_struct regs;
     struct user_regs_struct saved_regs;
 
-    ptrace_getregs(pid, &regs);
+    PtraceGetRegs(pid, &regs);
 
     memcpy(&saved_regs, &regs, sizeof(struct user_regs_struct));
 
@@ -144,14 +144,14 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
     printf("[+] Successfully set up return address to pid %d\n", pid);
 #endif
 
-    ptrace_setregs(pid, &regs);
+    PtraceSetRegs(pid, &regs);
 
-    ptrace_cont(pid);
+    PtraceCont(pid);
     waitpid(pid, NULL, WUNTRACED);
 
-    ptrace_getregs(pid, &regs);
+    PtraceGetRegs(pid, &regs);
     saved_regs.rax = regs.rax;
-    ptrace_setregs(pid, &saved_regs);
+    PtraceSetRegs(pid, &saved_regs);
 
 #ifdef DEBUG
     printf("[+] return value: 0x%llx\n\n", regs.rax);
