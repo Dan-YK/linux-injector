@@ -8,7 +8,7 @@
 int main(int argc, const char **argv) {
     if (argc != 3) {
         printf("Usage: %s [process id] [libray path]\n", argv[0]);
-        return -1;
+        return 1;
     }
 
     const pid_t remote_pid = atoi(argv[1]);
@@ -21,9 +21,9 @@ int main(int argc, const char **argv) {
     printf("[+] local process id: %d\n\n", local_pid);
 #endif
 
-    if (inject(local_pid, remote_pid, library_path) < 0) {
+    if (!inject(local_pid, remote_pid, library_path)) {
         fprintf(stderr, "[-] Failed to inject pid %d with the library, %s!\n", remote_pid, library_path);
-        return -1;
+        return 1;
     }
 
     return 0;

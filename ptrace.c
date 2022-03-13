@@ -7,7 +7,7 @@
 int ptrace_attach(pid_t pid) {
     if (ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0) {
         fprintf(stderr, "[-] Failed to attach to pid %d\n", pid);
-        return -1;
+        return 0;
     }
     waitpid(pid, NULL, WUNTRACED);
 
@@ -15,7 +15,7 @@ int ptrace_attach(pid_t pid) {
     printf("[+] Successfully attached to pid %d\n\n", pid);
 #endif
 
-    return 0;
+    return 1;
 }
 
 int ptrace_cont(pid_t pid) {
@@ -85,7 +85,7 @@ int ptrace_write(pid_t pid, uint64_t addr, uint64_t data, size_t size) {
         tmp_data = tmp_data + 0x8;
     }
 #ifdef DEBUG
-    printf("[+] Successfully wrote the data to pid %d\n", pid);
+    printf("[+] Successfully wrote %s to %lx\n", (char *)data, addr);
 #endif
 
     if (mod > 0) {
