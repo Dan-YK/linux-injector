@@ -12,7 +12,7 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    FILE *logger = fopen("logger/my_logger.log", "w");
+    FILE *logger = fopen("log/my_logger.log", "w");
     log_set_quiet(true);
     log_add_fp(logger, LOG_TRACE);
 
