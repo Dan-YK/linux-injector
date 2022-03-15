@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 
 #include "inject.h"
+#include "log.c/src/log.h"
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
@@ -29,7 +30,7 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
 uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
 #ifdef DEBUG
-    printf("[+] Calling mmap...\n");
+    log_debug("[+] Calling mmap...");
 #endif
     uint64_t remote_mmap_addr = GetRemoteFunctionAddr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "mmap"));
 
@@ -43,12 +44,13 @@ uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
     args[5] = 0x0;
 
 #ifdef DEBUG
-    printf("[+] arg0: %lx\n", args[0]);
-    printf("[+] arg1: %lx\n", args[1]);
-    printf("[+] arg2: %lx\n", args[2]);
-    printf("[+] arg3: %lx\n", args[3]);
-    printf("[+] arg4: %lx\n", args[4]);
-    printf("[+] arg5: %lx\n", args[5]);
+    log_debug("[+] mmap arguments");
+    log_debug("[+] arg0: %lx", args[0]);
+    log_debug("[+] arg1: %lx", args[1]);
+    log_debug("[+] arg2: %lx", args[2]);
+    log_debug("[+] arg3: %lx", args[3]);
+    log_debug("[+] arg4: %lx", args[4]);
+    log_debug("[+] arg5: %lx", args[5]);
 #endif
 
     uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
@@ -63,7 +65,7 @@ uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path)
     PtraceWrite(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path) + 1);
 
 #ifdef DEBUG
-    printf("[+] Calling dlopen...\n");
+    log_debug("[+] Calling dlopen...");
 #endif
     uint64_t remote_dlopen_addr = GetRemoteFunctionAddr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "dlopen"));
 
@@ -71,6 +73,12 @@ uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path)
     uint64_t args[argc];
     args[0] = mmap_ret;
     args[1] = RTLD_LAZY | RTLD_LOCAL;
+
+#ifdef DEBUG
+    log_debug("[+] dlopen arguments");
+    log_debug("[+] arg0: 0x%lx", args[0]);
+    log_debug("[+] arg1: %lx", args[1]);
+#endif
 
     uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
     return CallRemoteFunction(remote_pid, remote_dlopen_addr, return_addr, args, argc);
@@ -82,11 +90,11 @@ uint64_t GetRemoteFunctionAddr(pid_t local_pid, pid_t remote_pid, const char *mo
     uint64_t remote_base_addr = GetModuleBaseAddr(remote_pid, module_name);
 
 #ifdef DEBUG
-    printf("[+] local base address: 0x%lx\n", local_base_addr);
-    printf("[+] local function address: 0x%lx\n", local_function_addr);
-    printf("[+] offset: 0x%lx\n", local_function_addr - local_base_addr);
-    printf("[+] remote base address: 0x%lx\n", remote_base_addr);
-    printf("[+] remote function address: 0x%lx\n", remote_base_addr + (local_function_addr - local_base_addr));
+    log_debug("[+] local base address: 0x%lx", local_base_addr);
+    log_debug("[+] local function address: 0x%lx", local_function_addr);
+    log_debug("[+] offset: 0x%lx", local_function_addr - local_base_addr);
+    log_debug("[+] remote base address: 0x%lx", remote_base_addr);
+    log_debug("[+] remote function address: 0x%lx", remote_base_addr + (local_function_addr - local_base_addr));
 #endif
 
     return remote_base_addr + (local_function_addr - local_base_addr);
@@ -137,11 +145,11 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
 
 
     if (ptrace(PTRACE_POKEDATA, pid, regs.rsp, return_addr) < 0) {
-        fprintf(stderr, "[-] Failed to force pid %d to interrupt\n", pid);
-        return -1;
+        log_error("[-] Failed to force pid %d to interrupt", pid);
+        return 0;
     }
 #ifdef DEBUG
-    printf("[+] Successfully set up return address to pid %d\n", pid);
+    log_debug("[+] Successfully set up return address to pid %d", pid);
 #endif
 
     PtraceSetRegs(pid, &regs);
@@ -154,33 +162,34 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
     PtraceSetRegs(pid, &saved_regs);
 
 #ifdef DEBUG
-    printf("[+] return value: 0x%llx\n\n", regs.rax);
+    log_debug("[+] return value: 0x%llx\n", regs.rax);
 #endif
 
     return regs.rax;
 }
 
 void PrintRegisters(struct user_regs_struct *regs) {
-    printf("regs->r15: 0x%llx\n", regs->r15);
-    printf("regs->r14: 0x%llx\n", regs->r14);
-    printf("regs->r13: 0x%llx\n", regs->r13);
-    printf("regs->r12: 0x%llx\n", regs->r12);
-    printf("regs->rbp: 0x%llx\n", regs->rbp);
-    printf("regs->rbx: 0x%llx\n", regs->rbx);
-    printf("regs->r11: 0x%llx\n", regs->r11);
-    printf("regs->r10: 0x%llx\n", regs->r10);
-    printf("regs->r9: 0x%llx\n", regs->r9);
-    printf("regs->r8: 0x%llx\n", regs->r8);
-    printf("regs->rax: 0x%llx\n", regs->rax);
-    printf("regs->rcx: 0x%llx\n", regs->rcx);
-    printf("regs->rdx: 0x%llx\n", regs->rdx);
-    printf("regs->rsi: 0x%llx\n", regs->rsi);
-    printf("regs->rdi: 0x%llx\n", regs->rdi);
-    printf("regs->orig_rax: 0x%llx\n", regs->orig_rax);
-    printf("regs->rip: 0x%llx\n", regs->rip);
-    printf("regs->cs: 0x%llx\n", regs->cs);
-    printf("regs->eflags: 0x%llx\n", regs->eflags);
-    printf("regs->rsp: 0x%llx\n", regs->rsp);
-
+#ifdef DEBUG
+    log_debug("regs->r15: 0x%llx\n", regs->r15);
+    log_debug("regs->r14: 0x%llx\n", regs->r14);
+    log_debug("regs->r13: 0x%llx\n", regs->r13);
+    log_debug("regs->r12: 0x%llx\n", regs->r12);
+    log_debug("regs->rbp: 0x%llx\n", regs->rbp);
+    log_debug("regs->rbx: 0x%llx\n", regs->rbx);
+    log_debug("regs->r11: 0x%llx\n", regs->r11);
+    log_debug("regs->r10: 0x%llx\n", regs->r10);
+    log_debug("regs->r9: 0x%llx\n", regs->r9);
+    log_debug("regs->r8: 0x%llx\n", regs->r8);
+    log_debug("regs->rax: 0x%llx\n", regs->rax);
+    log_debug("regs->rcx: 0x%llx\n", regs->rcx);
+    log_debug("regs->rdx: 0x%llx\n", regs->rdx);
+    log_debug("regs->rsi: 0x%llx\n", regs->rsi);
+    log_debug("regs->rdi: 0x%llx\n", regs->rdi);
+    log_debug("regs->orig_rax: 0x%llx\n", regs->orig_rax);
+    log_debug("regs->rip: 0x%llx\n", regs->rip);
+    log_debug("regs->cs: 0x%llx\n", regs->cs);
+    log_debug("regs->eflags: 0x%llx\n", regs->eflags);
+    log_debug("regs->rsp: 0x%llx\n", regs->rsp);
+#endif
     return;
 }

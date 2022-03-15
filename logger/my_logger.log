@@ -1,0 +1,48 @@
+2022-03-15 13:00:32 DEBUG main.c:24: [+] remote process id: 164963
+2022-03-15 13:00:32 DEBUG main.c:25: [+] library path: /home/danielk/Project/linux-injector/hook.so
+2022-03-15 13:00:32 DEBUG main.c:26: [+] local process id: 165049
+
+2022-03-15 13:00:32 DEBUG ptrace.c:18: [+] Successfully attached to pid 164963
+
+2022-03-15 13:00:32 DEBUG inject.c:33: [+] Calling mmap...
+2022-03-15 13:00:32 DEBUG inject.c:93: [+] local base address: 0x7f132cb19000
+2022-03-15 13:00:32 DEBUG inject.c:94: [+] local function address: 0x7f132cc36b30
+2022-03-15 13:00:32 DEBUG inject.c:95: [+] offset: 0x11db30
+2022-03-15 13:00:32 DEBUG inject.c:96: [+] remote base address: 0x7fa22ae82000
+2022-03-15 13:00:32 DEBUG inject.c:97: [+] remote function address: 0x7fa22af9fb30
+2022-03-15 13:00:32 DEBUG inject.c:47: [+] mmap arguments
+2022-03-15 13:00:32 DEBUG inject.c:48: [+] arg0: 0
+2022-03-15 13:00:32 DEBUG inject.c:49: [+] arg1: 1000
+2022-03-15 13:00:32 DEBUG inject.c:50: [+] arg2: 3
+2022-03-15 13:00:32 DEBUG inject.c:51: [+] arg3: 22
+2022-03-15 13:00:32 DEBUG inject.c:52: [+] arg4: 0
+2022-03-15 13:00:32 DEBUG inject.c:53: [+] arg5: 0
+2022-03-15 13:00:32 DEBUG ptrace.c:63: [+] Successfully got regs from pid 164963
+2022-03-15 13:00:32 DEBUG inject.c:152: [+] Successfully set up return address to pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:78: [+] Successfully set regs to pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:33: [+] Successfully continued pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:63: [+] Successfully got regs from pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:78: [+] Successfully set regs to pid 164963
+2022-03-15 13:00:32 DEBUG inject.c:165: [+] return value: 0x7fa22419d000
+
+2022-03-15 13:00:32 DEBUG ptrace.c:101: [+] Successfully wrote /home/danielk/Project/linux-injector/hook.so to 0x7fa22419d000
+2022-03-15 13:00:32 DEBUG ptrace.c:110: [+] Successfully wrote the remaining data to pid 164963
+
+2022-03-15 13:00:32 DEBUG inject.c:68: [+] Calling dlopen...
+2022-03-15 13:00:32 DEBUG inject.c:93: [+] local base address: 0x7f132cb19000
+2022-03-15 13:00:32 DEBUG inject.c:94: [+] local function address: 0x7f132cba9590
+2022-03-15 13:00:32 DEBUG inject.c:95: [+] offset: 0x90590
+2022-03-15 13:00:32 DEBUG inject.c:96: [+] remote base address: 0x7fa22ae82000
+2022-03-15 13:00:32 DEBUG inject.c:97: [+] remote function address: 0x7fa22af12590
+2022-03-15 13:00:32 DEBUG inject.c:78: [+] dlopen arguments
+2022-03-15 13:00:32 DEBUG inject.c:79: [+] arg0: 0x7fa22419d000
+2022-03-15 13:00:32 DEBUG inject.c:80: [+] arg1: 1
+2022-03-15 13:00:32 DEBUG ptrace.c:63: [+] Successfully got regs from pid 164963
+2022-03-15 13:00:32 DEBUG inject.c:152: [+] Successfully set up return address to pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:78: [+] Successfully set regs to pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:33: [+] Successfully continued pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:63: [+] Successfully got regs from pid 164963
+2022-03-15 13:00:32 DEBUG ptrace.c:78: [+] Successfully set regs to pid 164963
+2022-03-15 13:00:32 DEBUG inject.c:165: [+] return value: 0x558625facc00
+
+2022-03-15 13:00:32 DEBUG ptrace.c:48: [+] Successfully detached from pid 164963

@@ -2,17 +2,20 @@
 #include <sys/wait.h>
 
 #include "inject.h"
+#include "log.c/src/log.h"
 #include "ptrace.h"
 
 int PtraceAttach(pid_t pid) {
     if (ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0) {
-        fprintf(stderr, "[-] Failed to attach to pid %d\n", pid);
+#ifdef DEBUG
+        log_error("[-] Failed to attach to pid %d", pid);
+#endif
         return 0;
     }
     waitpid(pid, NULL, WUNTRACED);
 
 #ifdef DEBUG
-    printf("[+] Successfully attached to pid %d\n\n", pid);
+    log_debug("[+] Successfully attached to pid %d\n", pid);
 #endif
 
     return 1;
@@ -20,12 +23,14 @@ int PtraceAttach(pid_t pid) {
 
 int PtraceCont(pid_t pid) {
     if (ptrace(PTRACE_CONT, pid, NULL, NULL) < 0) {
-        fprintf(stderr, "[-] Failed to continue pid %d\n", pid);
+#ifdef DEBUG
+        log_error("[-] Failed to continue pid %d", pid);
+#endif
         return 0;
     }
 
 #ifdef DEBUG
-    printf("[+] Successfully continued pid %d\n", pid);
+    log_debug("[+] Successfully continued pid %d", pid);
 #endif
 
     return 1;
@@ -33,12 +38,14 @@ int PtraceCont(pid_t pid) {
 
 int PtraceDetach(pid_t pid) {
     if (ptrace(PTRACE_DETACH, pid, NULL, NULL) < 0) {
-        fprintf(stderr, "[-] Failed to detach from pid %d\n", pid);
+#ifdef DEBUG
+        log_error("[-] Failed to detach from pid %d", pid);
+#endif
         return 0;
     }
 
 #ifdef DEBUG
-    printf("[+] Successfully detached from pid %d\n", pid);
+    log_debug("[+] Successfully detached from pid %d", pid);
 #endif
 
     return 1;
@@ -46,12 +53,14 @@ int PtraceDetach(pid_t pid) {
 
 int PtraceGetRegs(pid_t pid, struct user_regs_struct *regs) {
     if (ptrace(PTRACE_GETREGS, pid, NULL, regs) < 0) {
-        fprintf(stderr, "[-] Failed to get regs from pid %d\n", pid);
+#ifdef DEBUG
+        log_error("[-] Failed to get regs from pid %d", pid);
+#endif
         return 0;
     }
 
 #ifdef DEBUG
-    printf("[+] Successfully got regs from pid %d\n", pid);
+    log_debug("[+] Successfully got regs from pid %d", pid);
 #endif
 
     return 1;
@@ -59,12 +68,14 @@ int PtraceGetRegs(pid_t pid, struct user_regs_struct *regs) {
 
 int PtraceSetRegs(pid_t pid, struct user_regs_struct *regs) {
     if (ptrace(PTRACE_SETREGS, pid, NULL, regs) < 0) {
-        fprintf(stderr, "[-] Failed to set regs to pid %d\n", pid);
+#ifdef DEBUG
+        log_error("[-] Failed to set regs to pid %d", pid);
+#endif
         return 0;
     }
 
 #ifdef DEBUG
-    printf("[+] Successfully set regs to pid %d\n", pid);
+    log_debug("[+] Successfully set regs to pid %d", pid);
 #endif
 
     return 1;
@@ -78,23 +89,25 @@ int PtraceWrite(pid_t pid, uint64_t addr, uint64_t data, size_t size) {
 
     for (int i = 0; i < loop_count; i++) {
         if (ptrace(PTRACE_POKEDATA, pid, tmp_addr, *(uint64_t *)tmp_data) < 0) {
-            fprintf(stderr, "[-] Failed to write data to pid %d\n", pid);
+#ifdef DEBUG
+            log_error("[-] Failed to write data to pid %d", pid);
+#endif
             return 0;
         }
         tmp_addr = tmp_addr + 0x8;
         tmp_data = tmp_data + 0x8;
     }
 #ifdef DEBUG
-    printf("[+] Successfully wrote %s to %lx\n", (char *)data, addr);
+    log_debug("[+] Successfully wrote %s to 0x%lx", (char *)data, addr);
 #endif
 
     if (mod > 0) {
         if (ptrace(PTRACE_POKEDATA, pid, tmp_addr, *(uint64_t *)tmp_data) < 0) {
-            fprintf(stderr, "[-] Failed to write reamining data to pid %d\n", pid);
+            log_error("[-] Failed to write reamining data to pid %d", pid);
             return 0;
         }
 #ifdef DEBUG
-        printf("[+] Successfully wrote the remaining data to pid %d\n", pid);
+        log_debug("[+] Successfully wrote the remaining data to pid %d\n", pid);
 #endif
     }
 
