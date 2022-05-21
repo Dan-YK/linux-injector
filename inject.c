@@ -11,16 +11,16 @@
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
-    if (!PtraceAttach(remote_pid)) {
+    if (!ptrace_attach(remote_pid)) {
         return 0;
     }
 
-    uint64_t handle = CallDlopen(local_pid, remote_pid, library_path);
+    uint64_t handle = call_dlopen(local_pid, remote_pid, library_path);
     if (handle < 0) {
         return 0;
     }
 
-    if (PtraceDetach(remote_pid) < 0) {
+    if (ptrace_detach(remote_pid) < 0) {
         return 0;
     }
 
@@ -28,11 +28,11 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 }
 
 
-uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
+uint64_t call_mmap(pid_t local_pid, pid_t remote_pid, size_t length) {
 #ifdef DEBUG
     log_debug("[+] Calling mmap...");
 #endif
-    uint64_t remote_mmap_addr = GetRemoteFunctionAddr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "mmap"));
+    uint64_t remote_mmap_addr = get_remote_func_addr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "mmap"));
 
     uint8_t argc = 6;
     uint64_t args[argc];
@@ -54,20 +54,20 @@ uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length) {
 #endif
 
     uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
-    return CallRemoteFunction(remote_pid, remote_mmap_addr, return_addr, args, argc);
+    return call_remote_func(remote_pid, remote_mmap_addr, return_addr, args, argc);
 }
 
 
-uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path) {
+uint64_t call_dlopen(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
-    uint64_t mmap_ret = CallMmap(local_pid, remote_pid, PAGESIZE);
+    uint64_t mmap_ret = call_mmap(local_pid, remote_pid, PAGESIZE);
 
-    PtraceWrite(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path) + 1);
+    ptrace_write(remote_pid, mmap_ret, (uint64_t)library_path, strlen(library_path) + 1);
 
 #ifdef DEBUG
     log_debug("[+] Calling dlopen...");
 #endif
-    uint64_t remote_dlopen_addr = GetRemoteFunctionAddr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "dlopen"));
+    uint64_t remote_dlopen_addr = get_remote_func_addr(local_pid, remote_pid, LIBC_PATH, (uint64_t)dlsym(NULL, "dlopen"));
 
     uint8_t argc = 2;
     uint64_t args[argc];
@@ -81,13 +81,13 @@ uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path)
 #endif
 
     uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
-    return CallRemoteFunction(remote_pid, remote_dlopen_addr, return_addr, args, argc);
+    return call_remote_func(remote_pid, remote_dlopen_addr, return_addr, args, argc);
 }
 
 
-uint64_t GetRemoteFunctionAddr(pid_t local_pid, pid_t remote_pid, const char *module_name, uint64_t local_function_addr) {
-    uint64_t local_base_addr = GetModuleBaseAddr(local_pid, module_name);
-    uint64_t remote_base_addr = GetModuleBaseAddr(remote_pid, module_name);
+uint64_t get_remote_func_addr(pid_t local_pid, pid_t remote_pid, const char *module_name, uint64_t local_function_addr) {
+    uint64_t local_base_addr = get_module_base_addr(local_pid, module_name);
+    uint64_t remote_base_addr = get_module_base_addr(remote_pid, module_name);
 
 #ifdef DEBUG
     log_debug("[+] local base address: 0x%lx", local_base_addr);
@@ -101,7 +101,7 @@ uint64_t GetRemoteFunctionAddr(pid_t local_pid, pid_t remote_pid, const char *mo
 }
 
 
-uint64_t GetModuleBaseAddr(pid_t pid, const char *module_name) {
+uint64_t get_module_base_addr(pid_t pid, const char *module_name) {
     char line[0x100];
     uint64_t base_addr = 0;
 
@@ -120,11 +120,11 @@ uint64_t GetModuleBaseAddr(pid_t pid, const char *module_name) {
     free(file_path);
     return base_addr;
 }
-uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_addr, uint64_t *args, size_t argc) {
+uint64_t call_remote_func(pid_t pid, uint64_t function_addr, uint64_t return_addr, uint64_t *args, size_t argc) {
     struct user_regs_struct regs;
     struct user_regs_struct saved_regs;
 
-    PtraceGetRegs(pid, &regs);
+    ptrace_getregs(pid, &regs);
 
     memcpy(&saved_regs, &regs, sizeof(struct user_regs_struct));
 
@@ -152,14 +152,14 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
     log_debug("[+] Successfully set up return address to pid %d", pid);
 #endif
 
-    PtraceSetRegs(pid, &regs);
+    ptrace_setregs(pid, &regs);
 
-    PtraceCont(pid);
+    ptrace_cont(pid);
     waitpid(pid, NULL, WUNTRACED);
 
-    PtraceGetRegs(pid, &regs);
+    ptrace_getregs(pid, &regs);
     saved_regs.rax = regs.rax;
-    PtraceSetRegs(pid, &saved_regs);
+    ptrace_setregs(pid, &saved_regs);
 
 #ifdef DEBUG
     log_debug("[+] return value: 0x%llx\n", regs.rax);
@@ -168,7 +168,7 @@ uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_a
     return regs.rax;
 }
 
-void PrintRegisters(struct user_regs_struct *regs) {
+void print_regs(struct user_regs_struct *regs) {
 #ifdef DEBUG
     log_debug("regs->r15: 0x%llx\n", regs->r15);
     log_debug("regs->r14: 0x%llx\n", regs->r14);

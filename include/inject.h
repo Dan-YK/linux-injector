@@ -14,11 +14,11 @@
 #define DEBUG 1
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path);
-uint64_t CallDlopen(pid_t local_pid, pid_t remote_pid, const char *library_path);
-uint64_t CallMmap(pid_t local_pid, pid_t remote_pid, size_t length);
-uint64_t CallRemoteFunction(pid_t pid, uint64_t function_addr, uint64_t return_addr, uint64_t *args, size_t argc);
-uint64_t GetModuleBaseAddr(pid_t pid, const char *module_name);
-uint64_t GetRemoteFunctionAddr(pid_t local_pid, pid_t remote_pid, const char *module_name, uint64_t local_function_addr);
-void PrintRegisters(struct user_regs_struct *regs);
+uint64_t call_dlopen(pid_t local_pid, pid_t remote_pid, const char *library_path);
+uint64_t call_mmap(pid_t local_pid, pid_t remote_pid, size_t length);
+uint64_t call_remote_func(pid_t pid, uint64_t function_addr, uint64_t return_addr, uint64_t *args, size_t argc);
+uint64_t get_module_base_addr(pid_t pid, const char *module_name);
+uint64_t get_remote_func_addr(pid_t local_pid, pid_t remote_pid, const char *module_name, uint64_t local_function_addr);
+void print_regs(struct user_regs_struct *regs);
 
 #endif

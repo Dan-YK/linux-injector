@@ -5,7 +5,7 @@
 #include "log.c/src/log.h"
 #include "ptrace.h"
 
-int PtraceAttach(pid_t pid) {
+int ptrace_attach(pid_t pid) {
     if (ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0) {
 #ifdef DEBUG
         log_error("[-] Failed to attach to pid %d", pid);
@@ -21,7 +21,7 @@ int PtraceAttach(pid_t pid) {
     return 1;
 }
 
-int PtraceCont(pid_t pid) {
+int ptrace_cont(pid_t pid) {
     if (ptrace(PTRACE_CONT, pid, NULL, NULL) < 0) {
 #ifdef DEBUG
         log_error("[-] Failed to continue pid %d", pid);
@@ -36,7 +36,7 @@ int PtraceCont(pid_t pid) {
     return 1;
 }
 
-int PtraceDetach(pid_t pid) {
+int ptrace_detach(pid_t pid) {
     if (ptrace(PTRACE_DETACH, pid, NULL, NULL) < 0) {
 #ifdef DEBUG
         log_error("[-] Failed to detach from pid %d", pid);
@@ -51,7 +51,7 @@ int PtraceDetach(pid_t pid) {
     return 1;
 }
 
-int PtraceGetRegs(pid_t pid, struct user_regs_struct *regs) {
+int ptrace_getregs(pid_t pid, struct user_regs_struct *regs) {
     if (ptrace(PTRACE_GETREGS, pid, NULL, regs) < 0) {
 #ifdef DEBUG
         log_error("[-] Failed to get regs from pid %d", pid);
@@ -66,7 +66,7 @@ int PtraceGetRegs(pid_t pid, struct user_regs_struct *regs) {
     return 1;
 }
 
-int PtraceSetRegs(pid_t pid, struct user_regs_struct *regs) {
+int ptrace_setregs(pid_t pid, struct user_regs_struct *regs) {
     if (ptrace(PTRACE_SETREGS, pid, NULL, regs) < 0) {
 #ifdef DEBUG
         log_error("[-] Failed to set regs to pid %d", pid);
@@ -81,7 +81,7 @@ int PtraceSetRegs(pid_t pid, struct user_regs_struct *regs) {
     return 1;
 }
 
-int PtraceWrite(pid_t pid, uint64_t addr, uint64_t data, size_t size) {
+int ptrace_write(pid_t pid, uint64_t addr, uint64_t data, size_t size) {
     int loop_count = size / 8;
     uint8_t *tmp_addr = (uint8_t *)addr;
     uint8_t *tmp_data = (uint8_t *)data;
