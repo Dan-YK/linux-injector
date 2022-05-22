@@ -14,16 +14,17 @@ int main(int argc, const char **argv) {
 
     FILE *logger = fopen("log/my_logger.log", "w");
     log_set_quiet(true);
-    log_add_fp(logger, LOG_TRACE);
+    //log_add_fp(logger, LOG_TRACE);
+    log_add_fp(logger, LOG_INFO);
 
     const pid_t remote_pid = atoi(argv[1]);
     const char *library_path = argv[2];
     const pid_t local_pid = getpid();
 
 #ifdef DEBUG
-    log_debug("[+] remote process id: %d", remote_pid);
-    log_debug("[+] full library path: %s", library_path);
-    log_debug("[+] local process id: %d\n", local_pid);
+    log_info("remote process id: %d", remote_pid);
+    log_info("full library path: %s", library_path);
+    log_info("local pid: %d\n", local_pid);
 #endif
 
     if (!inject(local_pid, remote_pid, library_path)) {
