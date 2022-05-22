@@ -8,6 +8,8 @@
 
 #include "inject.h"
 #include "log.c/src/log.h"
+#include "ptrace.h"
+#include "utils.h"
 
 int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
@@ -34,19 +36,41 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
     if (handle <= 0)
         return 0;
 
+    void *s = call_remote_memset(local_pid, remote_pid, remote_mapped_addr, 0x0, 0x100);
+
+    int ret = call_remote_munmap(local_pid, remote_pid, remote_mapped_addr, PAGESIZE);
+    printf("ret: %d\n", ret);
+
     if (ptrace_detach(remote_pid) < 0)
         return 0;
 
     return 1;
 }
 
+void *call_remote_memset(pid_t local_pid, pid_t remote_pid, void *s, int c, size_t n) {
+    uint64_t remote_memset_addr = get_remote_func_addr(local_pid, remote_pid, LIBC_PATH, (uint64_t)memset);
 
-void write_to_remote_memory(pid_t remote_pid, void *target_addr, const char *payload) {
-    ptrace_write(
-            remote_pid,
-            (uint64_t)target_addr,
-            (uint64_t)payload,
-            strlen(payload) + 1);
+    uint8_t argc = 3;
+    uint64_t args[argc];
+    args[0] = (uint64_t)s;
+    args[1] = c;
+    args[2] = n;
+
+    uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
+    return (void *)(call_remote_func(remote_pid, remote_memset_addr, return_addr, args, argc));
+}
+
+
+int call_remote_munmap(pid_t local_pid, pid_t remote_pid, void *addr, size_t length) {
+    uint64_t remote_munmap_addr = get_remote_func_addr(local_pid, remote_pid, LIBC_PATH, (uint64_t)munmap);
+
+    uint8_t argc = 2;
+    uint64_t args[argc];
+    args[0] = (uint64_t)addr;
+    args[1] = length;
+
+    uint64_t return_addr = 0xFFFFFFFFFFFFFFFF;
+    return (int)(call_remote_func(remote_pid, remote_munmap_addr, return_addr, args, argc));
 }
 
 
@@ -187,31 +211,4 @@ uint64_t call_remote_func(pid_t pid, uint64_t function_addr, uint64_t return_add
 #endif
 
     return regs.rax;
-}
-
-
-void print_regs(struct user_regs_struct *regs) {
-#ifdef DEBUG
-    log_debug("regs->r15: 0x%llx\n", regs->r15);
-    log_debug("regs->r14: 0x%llx\n", regs->r14);
-    log_debug("regs->r13: 0x%llx\n", regs->r13);
-    log_debug("regs->r12: 0x%llx\n", regs->r12);
-    log_debug("regs->rbp: 0x%llx\n", regs->rbp);
-    log_debug("regs->rbx: 0x%llx\n", regs->rbx);
-    log_debug("regs->r11: 0x%llx\n", regs->r11);
-    log_debug("regs->r10: 0x%llx\n", regs->r10);
-    log_debug("regs->r9: 0x%llx\n", regs->r9);
-    log_debug("regs->r8: 0x%llx\n", regs->r8);
-    log_debug("regs->rax: 0x%llx\n", regs->rax);
-    log_debug("regs->rcx: 0x%llx\n", regs->rcx);
-    log_debug("regs->rdx: 0x%llx\n", regs->rdx);
-    log_debug("regs->rsi: 0x%llx\n", regs->rsi);
-    log_debug("regs->rdi: 0x%llx\n", regs->rdi);
-    log_debug("regs->orig_rax: 0x%llx\n", regs->orig_rax);
-    log_debug("regs->rip: 0x%llx\n", regs->rip);
-    log_debug("regs->cs: 0x%llx\n", regs->cs);
-    log_debug("regs->eflags: 0x%llx\n", regs->eflags);
-    log_debug("regs->rsp: 0x%llx\n", regs->rsp);
-#endif
-    return;
 }

@@ -1,6 +1,7 @@
 #ifndef PTRACE_H_
 #define PTRACE_H_
 
+#include <stdint.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/user.h>
