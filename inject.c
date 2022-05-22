@@ -1,10 +1,10 @@
 #include <dlfcn.h>
-#include <stdio.h>
-#include <stdlib.h>
+//#include <stdio.h>
+//#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+//#include <sys/types.h>
+//#include <sys/wait.h>
 
 #include "inject.h"
 #include "log.c/src/log.h"
@@ -26,7 +26,13 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
             0x0,
             0x0);
 
-    write_to_remote_memory(remote_pid, remote_mapped_addr, library_path);
+    int ret = write_to_remote_memory(remote_pid, remote_mapped_addr, library_path);
+    if (!ret) {
+#ifdef DEBUG
+        log_error("Failed to write to the memory");
+#endif
+        return 0;
+    }
 
     void *handle = call_remote_dlopen(
             local_pid,
@@ -38,7 +44,7 @@ int inject(pid_t local_pid, pid_t remote_pid, const char *library_path) {
 
     //void *s = call_remote_memset(local_pid, remote_pid, remote_mapped_addr, 0x0, 0x100);
 
-    int ret = call_remote_munmap(local_pid, remote_pid, remote_mapped_addr, PAGESIZE);
+    ret = call_remote_munmap(local_pid, remote_pid, remote_mapped_addr, PAGESIZE);
 
     if (ptrace_detach(remote_pid) < 0)
         return 0;
